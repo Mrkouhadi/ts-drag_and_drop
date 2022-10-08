@@ -1,9 +1,3 @@
-// interface Project{
-//     id:number;
-//     title:string;
-//     description:string;
-//     people:number;
-// }
 enum EProjectStatus {active, completed}
 class Project {
     constructor(public id:string, public title:string, public description:string, public people:number, public status:EProjectStatus){}
