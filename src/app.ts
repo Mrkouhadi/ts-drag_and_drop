@@ -29,14 +29,9 @@ class ProjectStateManager {
         }
         this.projects = [...this.projects, newProject];
         for(const listenerFn of this.listeners){
-            listenerFn(this.listeners.slice());
+            listenerFn(this.listeners.slice()); // return a copy using slice();
         }
     }
-
-    // removeProject(id:number):void{
-    //     this.projects = this.projects.filter(proj => proj.id !== id);
-    // }
-
 }
 const projectState = ProjectStateManager.getInstance(); // this approach makes sure we always have one instance of this class for the whole project
 
@@ -192,9 +187,6 @@ class ProjectInput{
         if(Array.isArray(userInputs)){
             const [title,desc, people] = userInputs;
             projectState.addProject(title,desc, people);
-
-            console.log(title, desc, people);
-
             this.clearInputs()
         }
     }
