@@ -4,37 +4,40 @@ interface Iproject{
     description:string;
     people:number;
 }
+
 // Project State Management class
 class ProjectStateManager {
-    private listeners:any[] = [];
+    private listeners:any[] = []
     private projects: Iproject[] = [];
     private static instance:ProjectStateManager;
+
+    private constructor(){}
 
     static getInstance(){
         if(this.instance) return this.instance
         this.instance = new ProjectStateManager();
         return this.instance;
     }
-    
+
     addListeners(listenerFn:Function):void{
         this.listeners = [...this.listeners, listenerFn]
     }
-
+ 
     addProject(title:string, description:string, numOfPeople:number):void{
         const newProject:Iproject = {
             id:new Date().valueOf(),
-            title,
-            description,
+            title:title,
+            description:description,
             people:numOfPeople,
-        }
+        };
         this.projects = [...this.projects, newProject];
+
         for(const listenerFn of this.listeners){
-            listenerFn(this.listeners.slice()); // return a copy using slice();
+            listenerFn(this.projects.slice()); // return a copy using slice();
         }
     }
 }
 const projectState = ProjectStateManager.getInstance(); // this approach makes sure we always have one instance of this class for the whole project
-
 
 // interface of Validatable
 interface Ivalidatable {
@@ -45,6 +48,7 @@ interface Ivalidatable {
     min?:number;
     max?:number;
 }
+
 // validation function that helps validate the inputs
 const validate=(validatableInput:Ivalidatable):boolean=>{
     let isValid = true;
@@ -65,6 +69,7 @@ const validate=(validatableInput:Ivalidatable):boolean=>{
     }
     return isValid;
 }
+
 // a decorator that helps us auto bind methods
 const AutoBinder=(target:any, methodName: string | Symbol, descriptor: PropertyDescriptor):PropertyDescriptor => {
     const originalMethod = descriptor.value;
@@ -82,7 +87,7 @@ class ProjectList{
     templateElement:HTMLTemplateElement;
     hostElement: HTMLDivElement;
     element:HTMLElement;
-    assignedProjects: Iproject[]=[];
+    assignedProjects: Iproject[];
 
     constructor(private type: "completed" | "active"){
         this.templateElement = document.getElementById("project-list") as HTMLTemplateElement;
@@ -92,26 +97,27 @@ class ProjectList{
         this.element = <HTMLElement>importedNode.firstElementChild;
         this.element.id = `${this.type}-projects`;
 
-        
-        
-        this.renderContent()
-        this.attach()
-        projectState.addListeners((projects:Iproject[])=>{
+        const newAddedFuncToListeners = (projects:Iproject[])=>{
             this.assignedProjects = projects;
-            this.renderProjects()
-        });
+            this.renderProjects();
+        }
+        projectState.addListeners(newAddedFuncToListeners);
+        this.attach()
+        this.renderContent()
     }
 
     private renderProjects():void{
-        const listEl = document.getElementById(`${this.type}-projects_list`)! as HTMLUListElement;
+        const listEl = document.getElementById(`${this.type}-projects-list`)! as HTMLUListElement;
         for(const proj of this.assignedProjects){
             const listItem = document.createElement("li");
             listItem.textContent = proj.title;
             listEl.appendChild(listItem);
+            console.log('assigned projects: ', proj);
         }
     }
+
     private renderContent():void{
-        this.element.querySelector("ul")!.id = `${this.type}-projects_list`;
+        this.element.querySelector("ul")!.id = `${this.type}-projects-list`;
         this.element.querySelector("h2")!.textContent = `${this.type.toUpperCase()} PROJECTS`
     }
 
@@ -186,7 +192,7 @@ class ProjectInput{
         const userInputs = this.gatherInputs();
         if(Array.isArray(userInputs)){
             const [title,desc, people] = userInputs;
-            projectState.addProject(title,desc, people);
+            projectState.addProject(title, desc, people);
             this.clearInputs()
         }
     }
