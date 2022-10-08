@@ -1,4 +1,47 @@
+interface Iproject{
+    id:number;
+    title:string;
+    description:string;
+    people:number;
+}
+// Project State Management class
+class ProjectStateManager {
+    private listeners:any[] = [];
+    private projects: Iproject[] = [];
+    private static instance:ProjectStateManager;
 
+    static getInstance(){
+        if(this.instance) return this.instance
+        this.instance = new ProjectStateManager();
+        return this.instance;
+    }
+    
+    addListeners(listenerFn:Function):void{
+        this.listeners = [...this.listeners, listenerFn]
+    }
+
+    addProject(title:string, description:string, numOfPeople:number):void{
+        const newProject:Iproject = {
+            id:new Date().valueOf(),
+            title,
+            description,
+            people:numOfPeople,
+        }
+        this.projects = [...this.projects, newProject];
+        for(const listenerFn of this.listeners){
+            listenerFn(this.listeners.slice());
+        }
+    }
+
+    // removeProject(id:number):void{
+    //     this.projects = this.projects.filter(proj => proj.id !== id);
+    // }
+
+}
+const projectState = ProjectStateManager.getInstance(); // this approach makes sure we always have one instance of this class for the whole project
+
+
+// interface of Validatable
 interface Ivalidatable {
     value: string | number;
     required?:boolean;
@@ -7,7 +50,7 @@ interface Ivalidatable {
     min?:number;
     max?:number;
 }
-
+// validation function that helps validate the inputs
 const validate=(validatableInput:Ivalidatable):boolean=>{
     let isValid = true;
     if(validatableInput.required){
@@ -39,25 +82,44 @@ const AutoBinder=(target:any, methodName: string | Symbol, descriptor: PropertyD
     }
 }
 
-// // class Project list
+// class Project list
 class ProjectList{
     templateElement:HTMLTemplateElement;
     hostElement: HTMLDivElement;
     element:HTMLElement;
+    assignedProjects: Iproject[]=[];
+
     constructor(private type: "completed" | "active"){
         this.templateElement = document.getElementById("project-list") as HTMLTemplateElement;
         this.hostElement = <HTMLDivElement>document.getElementById("app");
+        this.assignedProjects = [];
         const importedNode = document.importNode(this.templateElement.content, true);
-
         this.element = <HTMLElement>importedNode.firstElementChild;
+        this.element.id = `${this.type}-projects`;
 
-        this.attach()
+        
+        
         this.renderContent()
+        this.attach()
+        projectState.addListeners((projects:Iproject[])=>{
+            this.assignedProjects = projects;
+            this.renderProjects()
+        });
+    }
+
+    private renderProjects():void{
+        const listEl = document.getElementById(`${this.type}-projects_list`)! as HTMLUListElement;
+        for(const proj of this.assignedProjects){
+            const listItem = document.createElement("li");
+            listItem.textContent = proj.title;
+            listEl.appendChild(listItem);
+        }
     }
     private renderContent():void{
-        this.element.querySelector("ul")!.id = `${this.type}-projects`;
+        this.element.querySelector("ul")!.id = `${this.type}-projects_list`;
         this.element.querySelector("h2")!.textContent = `${this.type.toUpperCase()} PROJECTS`
     }
+
     private attach():void{
         this.hostElement.insertAdjacentElement('beforeend', this.element)
     }
@@ -122,13 +184,17 @@ class ProjectInput{
             throw new Error("fields are empty !")
         }
     }
+
     @AutoBinder //using a decorator to bind this method; alternative of: this.submitHandler.bind(this)
     private submitHandler(e:Event):void{
         e.preventDefault();
         const userInputs = this.gatherInputs();
         if(Array.isArray(userInputs)){
             const [title,desc, people] = userInputs;
+            projectState.addProject(title,desc, people);
+
             console.log(title, desc, people);
+
             this.clearInputs()
         }
     }
