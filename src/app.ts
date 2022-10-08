@@ -1,11 +1,14 @@
+// class Project
 enum EProjectStatus {active, completed}
 class Project {
     constructor(public id:string, public title:string, public description:string, public people:number, public status:EProjectStatus){}
 }
 
 // Project State Management class
+type Tlistner = (items:Project[])=>void;
+
 class ProjectStateManager {
-    private listeners:any[] = []
+    private listeners:Tlistner[] = []
     private projects: Project[] = [];
     private static instance:ProjectStateManager;
 
@@ -17,7 +20,7 @@ class ProjectStateManager {
         return this.instance;
     }
 
-    addListeners(listenerFn:Function):void{
+    addListeners(listenerFn:Tlistner):void{
         this.listeners = [...this.listeners, listenerFn]
     }
  
@@ -91,7 +94,11 @@ class ProjectList{
         this.element.id = `${this.type}-projects`;
 
         const newAddedFuncToListeners = (projects:Project[])=>{
-            this.assignedProjects = projects;
+            const relevantProjects = projects.filter(proj => {
+                if(this.type === 'active') return proj.status === EProjectStatus.active
+                return proj.status === EProjectStatus.completed
+            })
+            this.assignedProjects = relevantProjects;
             this.renderProjects();
         }
         projectState.addListeners(newAddedFuncToListeners);
@@ -101,6 +108,7 @@ class ProjectList{
 
     private renderProjects():void{
         const listEl = document.getElementById(`${this.type}-projects-list`)! as HTMLUListElement;
+        listEl.innerHTML = ""
         for(const proj of this.assignedProjects){
             const listItem = document.createElement("li");
             listItem.textContent = proj.title;
