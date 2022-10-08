@@ -55,8 +55,7 @@ class ProjectList{
         this.renderContent()
     }
     private renderContent():void{
-        const listId = `${this.type}-projects`;
-        this.element.querySelector("ul")!.id = listId;
+        this.element.querySelector("ul")!.id = `${this.type}-projects`;
         this.element.querySelector("h2")!.textContent = `${this.type.toUpperCase()} PROJECTS`
     }
     private attach():void{
