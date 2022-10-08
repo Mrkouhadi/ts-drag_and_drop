@@ -1,14 +1,18 @@
-interface Iproject{
-    id:number;
-    title:string;
-    description:string;
-    people:number;
+// interface Project{
+//     id:number;
+//     title:string;
+//     description:string;
+//     people:number;
+// }
+enum EProjectStatus {active, completed}
+class Project {
+    constructor(public id:string, public title:string, public description:string, public people:number, public status:EProjectStatus){}
 }
 
 // Project State Management class
 class ProjectStateManager {
     private listeners:any[] = []
-    private projects: Iproject[] = [];
+    private projects: Project[] = [];
     private static instance:ProjectStateManager;
 
     private constructor(){}
@@ -24,12 +28,7 @@ class ProjectStateManager {
     }
  
     addProject(title:string, description:string, numOfPeople:number):void{
-        const newProject:Iproject = {
-            id:new Date().valueOf(),
-            title:title,
-            description:description,
-            people:numOfPeople,
-        };
+        const newProject = new Project(new Date().toString(), title, description, numOfPeople, EProjectStatus.active)
         this.projects = [...this.projects, newProject];
 
         for(const listenerFn of this.listeners){
@@ -87,7 +86,7 @@ class ProjectList{
     templateElement:HTMLTemplateElement;
     hostElement: HTMLDivElement;
     element:HTMLElement;
-    assignedProjects: Iproject[];
+    assignedProjects: Project[];
 
     constructor(private type: "completed" | "active"){
         this.templateElement = document.getElementById("project-list") as HTMLTemplateElement;
@@ -97,7 +96,7 @@ class ProjectList{
         this.element = <HTMLElement>importedNode.firstElementChild;
         this.element.id = `${this.type}-projects`;
 
-        const newAddedFuncToListeners = (projects:Iproject[])=>{
+        const newAddedFuncToListeners = (projects:Project[])=>{
             this.assignedProjects = projects;
             this.renderProjects();
         }
@@ -112,7 +111,6 @@ class ProjectList{
             const listItem = document.createElement("li");
             listItem.textContent = proj.title;
             listEl.appendChild(listItem);
-            console.log('assigned projects: ', proj);
         }
     }
 
