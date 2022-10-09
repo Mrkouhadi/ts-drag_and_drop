@@ -36,10 +36,9 @@ class ProjectStateManager extends State<Project> {
         this.instance = new ProjectStateManager();
         return this.instance;
     }
-
  
     addProject(title:string, description:string, numOfPeople:number):void{
-        const newProject = new Project(new Date().toString(), title, description, numOfPeople, EProjectStatus.active)
+        const newProject = new Project(new Date().valueOf().toString(), title, description, numOfPeople, EProjectStatus.active)
         this.projects = [...this.projects, newProject];
 
         for(const listenerFn of this.listeners){
@@ -131,7 +130,8 @@ class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> implements 
     }
     @AutoBinder
     dragStartHandler(event: DragEvent):void{
-        console.log("start dragging: ", event);
+        event.dataTransfer!.setData('text/plain', this.project.id);
+        event.dataTransfer!.effectAllowed = 'move'
     }
     @AutoBinder
     dragEndHandler(event:DragEvent):void{
@@ -157,50 +157,51 @@ class ProjectList extends Component<HTMLDivElement, HTMLElement> implements IDra
         this.assignedProjects = [];
         this.configure();
         this.renderContent()
-    }
+    };
 
     @AutoBinder
     dragOverHandler(event: DragEvent):void{
-        const listEl = this.element.querySelector("ul")!;
-        listEl.classList.add("droppable");
-    }
+        if(event.dataTransfer && event.dataTransfer.types[0] === 'text/plain'){
+            event.preventDefault()
+            const listEl = this.element.querySelector("ul")!;
+            listEl.classList.add("droppable");
+        }
+    };
     @AutoBinder
     dropHandler(event: DragEvent):void{
-        
-    }
+        console.log(event.dataTransfer?.getData('text/plain'));
+    };
     @AutoBinder
     dragLeaveHandler(event: DragEvent):void{
         const listEl = this.element.querySelector("ul")!;
         listEl.classList.remove("droppable");
-    }
-
+    };
     configure(): void {
         this.element.addEventListener("dragover", this.dragOverHandler);
-        this.element.addEventListener("drop", this.dropHandler)
-        this.element.addEventListener("dragleave", this.dragLeaveHandler)
-
+        this.element.addEventListener("drop", this.dropHandler);
+        this.element.addEventListener("dragleave", this.dragLeaveHandler);
         const newAddedFuncToListeners = (projects:Project[])=>{
             const relevantProjects = projects.filter(proj => {
                 if(this.type === 'active') return proj.status === EProjectStatus.active
                 return proj.status === EProjectStatus.completed
-            })
+            });
             this.assignedProjects = relevantProjects;
             this.renderProjects();
-        }
+        };
         projectState.addListeners(newAddedFuncToListeners);
-    }
+    };
     renderContent():void{
         this.element.querySelector("ul")!.id = `${this.type}-projects-list`;
         this.element.querySelector("h2")!.textContent = `${this.type.toUpperCase()} PROJECTS`
-    }
+    };
     private renderProjects():void{
         const listEl = document.getElementById(`${this.type}-projects-list`)! as HTMLUListElement;
         listEl.innerHTML = ""
         for(const proj of this.assignedProjects){
             new ProjectItem(`${this.type}-projects-list`, proj)
         }
-    }
-}
+    };
+};
 
 // class ProjectInput
 class ProjectInput extends Component<HTMLDivElement, HTMLElement>{
@@ -215,18 +216,18 @@ class ProjectInput extends Component<HTMLDivElement, HTMLElement>{
         this.peopleInputElement = <HTMLInputElement>this.element.querySelector("#people");
 
         this.configure()
-    }
+    };
     configure():void{
         this.element.addEventListener('submit', this.submitHandler) // without decorator; we would need: .bind(this)
-    }
+    };
     renderContent(): void {
         
-    }
+    };
     private clearInputs():void{
         this.titleInputElement.value = ""
         this.descriptionInputElement.value = ""
         this.peopleInputElement.value = ""
-    }
+    };
     private gatherInputs():[string, string, number]{
         const TitleVal = this.titleInputElement.value;
         const descVal = this.descriptionInputElement.value;
@@ -256,7 +257,7 @@ class ProjectInput extends Component<HTMLDivElement, HTMLElement>{
             alert("error")
             throw new Error("fields are empty !")
         }
-    }
+    };
 
     @AutoBinder //using a decorator to bind this method; alternative of: this.submitHandler.bind(this)
     private submitHandler(e:Event):void{
@@ -267,8 +268,8 @@ class ProjectInput extends Component<HTMLDivElement, HTMLElement>{
             projectState.addProject(title, desc, people);
             this.clearInputs()
         }
-    }
-}
+    };
+};
 const completedProjects = new ProjectList('completed');
 const activeProjects = new ProjectList('active');
 const projectForm = new ProjectInput();
