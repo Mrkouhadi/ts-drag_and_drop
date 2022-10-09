@@ -1,3 +1,14 @@
+// interface for drag & drop
+interface Idraggable{
+    dragStartHandler(event: DragEvent):void;
+    dragEndHandler(event:DragEvent):void;
+}
+interface IDragTarget{
+    dragOverHandler(event: DragEvent):void;
+    dropHandler(event: DragEvent):void;
+    dragLeaveHandler(event: DragEvent):void;
+}
+
 // class Project
 enum EProjectStatus {active, completed}
 class Project {
@@ -97,6 +108,7 @@ abstract class Component<T extends HTMLElement, U extends HTMLElement> {
 
         this.attach(insertAtstart)
     }
+
     private attach(insert:boolean):void{
         const position:InsertPosition = insert ? "afterbegin" : 'beforeend';
         this.hostElement.insertAdjacentElement(position, this.element)
@@ -105,15 +117,38 @@ abstract class Component<T extends HTMLElement, U extends HTMLElement> {
     abstract renderContent():void;
 }
 // ProjectItem class
-class ProjectItem extends Component<HTMLUListElement, HTMLLIElement>{
+class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> implements Idraggable{
     private project: Project;
-    constructor( hostId:string,project:Project ){
-        super("single-project",hostId, false, project.id);
+    
+    get persons(){
+        return this.project.people > 1 ? `${this.project.people} Persons are Assigned` : "1 Person is Assigned";
+    }
+    constructor( hostId:string, project:Project ){
+        super("single-project", hostId, false, project.id);
         this.project = project;
+        this.configure()
+        this.renderContent();
+    }
+    @AutoBinder
+    dragStartHandler(event: DragEvent):void{
+        console.log("start dragging: ", event);
+    }
+    @AutoBinder
+    dragEndHandler(event:DragEvent):void{
+        console.log("End dragging: ", event);
+    }
+    configure(): void {
+        this.element.addEventListener("dragstart", this.dragStartHandler);
+        this.element.addEventListener("dragend", this.dragEndHandler);
+    }
+    renderContent(): void {
+        this.element.querySelector("h2")!.textContent = "Title: "+this.project.title;
+        this.element.querySelector("h3")!.textContent = "Members: "+this.persons;
+        this.element.querySelector("p")!.textContent = "Description: "+this.project.description;
     }
 }
 // class Project list
-class ProjectList extends Component<HTMLDivElement, HTMLElement>{
+class ProjectList extends Component<HTMLDivElement, HTMLElement> implements IDragTarget{
     assignedProjects: Project[];
 
     constructor(private type: "completed" | "active"){
@@ -124,7 +159,26 @@ class ProjectList extends Component<HTMLDivElement, HTMLElement>{
         this.renderContent()
     }
 
+    @AutoBinder
+    dragOverHandler(event: DragEvent):void{
+        const listEl = this.element.querySelector("ul")!;
+        listEl.classList.add("droppable");
+    }
+    @AutoBinder
+    dropHandler(event: DragEvent):void{
+        
+    }
+    @AutoBinder
+    dragLeaveHandler(event: DragEvent):void{
+        const listEl = this.element.querySelector("ul")!;
+        listEl.classList.remove("droppable");
+    }
+
     configure(): void {
+        this.element.addEventListener("dragover", this.dragOverHandler);
+        this.element.addEventListener("drop", this.dropHandler)
+        this.element.addEventListener("dragleave", this.dragLeaveHandler)
+
         const newAddedFuncToListeners = (projects:Project[])=>{
             const relevantProjects = projects.filter(proj => {
                 if(this.type === 'active') return proj.status === EProjectStatus.active
@@ -143,9 +197,7 @@ class ProjectList extends Component<HTMLDivElement, HTMLElement>{
         const listEl = document.getElementById(`${this.type}-projects-list`)! as HTMLUListElement;
         listEl.innerHTML = ""
         for(const proj of this.assignedProjects){
-            const listItem = document.createElement("li");
-            listItem.textContent = proj.title;
-            listEl.appendChild(listItem);
+            new ProjectItem(`${this.type}-projects-list`, proj)
         }
     }
 }
