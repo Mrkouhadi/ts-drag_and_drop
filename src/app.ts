@@ -5,14 +5,20 @@ class Project {
 }
 
 // Project State Management class
-type Tlistner = (items:Project[])=>void;
-
-class ProjectStateManager {
-    private listeners:Tlistner[] = []
+type Tlistner<T> = (items:T[])=>void;
+class State<T>{
+    protected listeners:Tlistner<T>[] = []
+    addListeners(listenerFn:Tlistner<T>):void{
+        this.listeners = [...this.listeners, listenerFn]
+    }
+}
+class ProjectStateManager extends State<Project> {
     private projects: Project[] = [];
     private static instance:ProjectStateManager;
 
-    private constructor(){}
+    private constructor(){
+        super();
+    }
 
     static getInstance(){
         if(this.instance) return this.instance
@@ -20,9 +26,6 @@ class ProjectStateManager {
         return this.instance;
     }
 
-    addListeners(listenerFn:Tlistner):void{
-        this.listeners = [...this.listeners, listenerFn]
-    }
  
     addProject(title:string, description:string, numOfPeople:number):void{
         const newProject = new Project(new Date().toString(), title, description, numOfPeople, EProjectStatus.active)
@@ -100,6 +103,14 @@ abstract class Component<T extends HTMLElement, U extends HTMLElement> {
     }
     abstract configure():void;
     abstract renderContent():void;
+}
+// ProjectItem class
+class ProjectItem extends Component<HTMLUListElement, HTMLLIElement>{
+    private project: Project;
+    constructor( hostId:string,project:Project ){
+        super("single-project",hostId, false, project.id);
+        this.project = project;
+    }
 }
 // class Project list
 class ProjectList extends Component<HTMLDivElement, HTMLElement>{
