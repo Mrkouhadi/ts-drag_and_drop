@@ -40,7 +40,16 @@ class ProjectStateManager extends State<Project> {
     addProject(title:string, description:string, numOfPeople:number):void{
         const newProject = new Project(new Date().valueOf().toString(), title, description, numOfPeople, EProjectStatus.active)
         this.projects = [...this.projects, newProject];
-
+        this.updateListners();
+    }
+    moveProject(projId:string, newStatus:EProjectStatus):void{
+        const exist = this.projects.find(proj => proj.id === projId);
+        if(exist && exist.status !== newStatus) {
+            exist.status = newStatus;
+            this.updateListners();
+        }
+    }
+    private updateListners():void{
         for(const listenerFn of this.listeners){
             listenerFn(this.projects.slice()); // return a copy using slice();
         }
@@ -131,9 +140,8 @@ class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> implements 
     @AutoBinder
     dragStartHandler(event: DragEvent):void{
         event.dataTransfer!.setData('text/plain', this.project.id);
-        event.dataTransfer!.effectAllowed = 'move'
+        event.dataTransfer!.effectAllowed = 'move';
     }
-    @AutoBinder
     dragEndHandler(event:DragEvent):void{
         console.log("End dragging: ", event);
     }
@@ -169,7 +177,8 @@ class ProjectList extends Component<HTMLDivElement, HTMLElement> implements IDra
     };
     @AutoBinder
     dropHandler(event: DragEvent):void{
-        console.log(event.dataTransfer?.getData('text/plain'));
+        const draggedProjID = event.dataTransfer!.getData('text/plain');
+        projectState.moveProject(draggedProjID, this.type === "active" ? EProjectStatus.active : EProjectStatus.completed);
     };
     @AutoBinder
     dragLeaveHandler(event: DragEvent):void{
