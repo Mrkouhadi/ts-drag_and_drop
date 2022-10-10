@@ -1,4 +1,3 @@
-
 namespace App{
     // class Project
    export  enum EProjectStatus {active, completed}
