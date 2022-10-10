@@ -8,7 +8,6 @@
 /// <reference path="components/ProjectInput.ts"/>
 /// <reference path="components/ProjectItem.ts"/>
 
-
 namespace App{
     new ProjectList('completed');
     new ProjectList('active');
